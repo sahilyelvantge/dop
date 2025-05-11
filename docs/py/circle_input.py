@@ -1,38 +1,42 @@
 """
-circle_input.py  –  dynamic version
------------------------------------
-Reads a CSV list of catalysts from args["csv"]:
-
-    NiO@Ce3O4,100,0,0
-    NiO@SiO2,59.3,9.43,31.3
-    ...
-
-For each row it draws a textured sphere whose surface areas follow
-Weak / Medium / High percentages.  All spheres are placed in an NxM grid.
+circle_input.py
+Runs inside Pyodide.  Expects an `args` dict:
+  args = {
+      "Catalyst": "NiO@SiO2" | "NiO@Ce3O4" | "NiO@ZrO2" | "NiO@CeO2" | "All",
+      "Weak": 100, "Medium": 0, "High": 0        # used only for custom
+  }
+If Catalyst == 'Custom', we use the Weak/Medium/High fields.
 """
-import matplotlib.pyplot as plt, numpy as np, random, math, io, base64, json
 
-# -------- helper for bump parameters -----------------------------
+import matplotlib.pyplot as plt, numpy as np, random, json, math
+
+# ------------- data -------------------------------------------------------
+catalysts = {
+    "NiO@Ce3O4": {"Weak": 100,  "Medium": 0,    "High": 0   },
+    "NiO@SiO2":  {"Weak": 59.3, "Medium": 9.43, "High": 31.3},
+    "NiO@ZrO2":  {"Weak": 5.70, "Medium": 0,    "High": 94.3},
+    "NiO@CeO2":  {"Weak": 84.7, "Medium": 4.85, "High": 10.4}
+}
+gradients = {
+    "NiO@Ce3O4": [(0.9,0.8,1.0),(0.7,0.5,0.9),(0.5,0.2,0.7)],
+    "NiO@SiO2":  [(0.8,0.9,1.0),(0.3,0.6,0.9),(0.1,0.3,0.8)],
+    "NiO@ZrO2":  [(0.8,1.0,0.8),(0.4,0.8,0.4),(0.1,0.6,0.3)],
+    "NiO@CeO2":  [(1.0,0.8,0.8),(0.9,0.4,0.4),(0.7,0.1,0.1)]
+}
+
+# ------------- helpers ----------------------------------------------------
 def tex_params(inten):
     return (5,0.15) if inten=="Weak" else (10,0.10) if inten=="Medium" else (15,0.05)
 
-def make_gradient(i):
-    """Return 3 RGB tuples, cycling through 4 base palettes."""
-    palettes = [
-        [(0.9,0.8,1.0),(0.7,0.5,0.9),(0.5,0.2,0.7)],   # purple
-        [(0.8,0.9,1.0),(0.3,0.6,0.9),(0.1,0.3,0.8)],   # blue
-        [(0.8,1.0,0.8),(0.4,0.8,0.4),(0.1,0.6,0.3)],   # green
-        [(1.0,0.8,0.8),(0.9,0.4,0.4),(0.7,0.1,0.1)]    # red
-    ]
-    return palettes[i % len(palettes)]
-
 def sphere(ax, perc, colors, title):
+    # base mesh
     u = np.linspace(0, 2*np.pi, 100)
     v = np.linspace(0, np.pi, 50)
     x = np.outer(np.cos(u), np.sin(v))
     y = np.outer(np.sin(u), np.sin(v))
     z = np.outer(np.ones(u.size), np.cos(v))
 
+    # shuffle intensity assignment
     verts = len(u)*len(v)
     order = (["Weak"]*int(perc["Weak"]/100*verts) +
              ["Medium"]*int(perc["Medium"]/100*verts))
@@ -59,35 +63,36 @@ def sphere(ax, perc, colors, title):
     ax.plot_surface(x,y,z,facecolors=cmap,linewidth=0,alpha=0.9,shade=True)
     ax.set_axis_off(); ax.set_xlim(-1.4,1.4); ax.set_ylim(-1.4,1.4); ax.set_zlim(-1.4,1.4)
     ax.view_init(elev=30, azim=45)
-    ax.set_title(title, fontsize=10)
+    ax.set_title(title, fontsize=12)
 
-# -------- parse incoming args ------------------------------------
+# ------------- read args --------------------------------------------------
 try:
-    csv_text = args["csv"]
-except Exception:
-    csv_text = "NiO@Ce3O4,100,0,0"
+    args
+except NameError:
+    args = {}
 
-rows = [l.strip() for l in csv_text.splitlines() if l.strip()]
-catalysts = []
-for line in rows:
-    name,*vals = [s.strip() for s in line.split(",")]
-    if len(vals)!=3: continue
-    w,m,h = map(float, vals)
-    catalysts.append((name, {"Weak":w,"Medium":m,"High":h}))
+choice = args.get("Catalyst","NiO@Ce3O4")
 
-if not catalysts:
-    catalysts = [("Example", {"Weak":100,"Medium":0,"High":0})]
-
-# -------- build figure ------------------------------------------
-n = len(catalysts)
-cols = math.ceil(math.sqrt(n))
-rows = math.ceil(n / cols)
-fig = plt.figure(figsize=(5*cols, 4*rows))
-grid = fig.add_gridspec(rows, cols)
-
-for idx,(name,perc) in enumerate(catalysts):
-    r,c = divmod(idx, cols)
-    ax = fig.add_subplot(grid[r,c], projection='3d')
-    sphere(ax, perc, make_gradient(idx), name)
-
-fig.suptitle("Catalyst Textured Spheres", fontsize=14)
+if choice == "All":
+    fig = plt.figure(figsize=(10,10))
+    grid = fig.add_gridspec(2,2)
+    for k,(cat,perc) in enumerate(catalysts.items()):
+        row,col = divmod(k,2)
+        ax = fig.add_subplot(grid[row,col], projection='3d')
+        sphere(ax, perc, gradients[cat], cat)
+    fig.suptitle("All Catalysts", fontsize=16)
+else:
+    if choice not in catalysts:
+        # custom percentages
+        perc = {"Weak":float(args.get("Weak",100)),
+                "Medium":float(args.get("Medium",0)),
+                "High":float(args.get("High",0))}
+        colors = gradients["NiO@Ce3O4"]   # reuse purple gradient
+        title = "Custom Catalyst"
+    else:
+        perc = catalysts[choice]
+        colors = gradients[choice]
+        title = choice
+    fig = plt.figure(figsize=(6,6))
+    ax = fig.add_subplot(111, projection='3d')
+    sphere(ax, perc, colors, title)
