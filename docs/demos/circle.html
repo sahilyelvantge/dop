@@ -1,4 +1,3 @@
-<!-- docs/demos/circle.html  – final working version -->
 <!DOCTYPE html><html><head>
   <meta charset="utf-8" />
   <title>Textured Sphere Demo</title>
@@ -7,11 +6,11 @@
   <!-- Pyodide core -->
   <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
 
-  <!-- 1 · Initialise Pyodide (defines window.loadPy) -->
-  <script type="module" src="../js/pyinit.js?v3"></script>
+  <!-- Initialise Pyodide (defines window.loadPy) -->
+  <script type="module" src="../js/pyinit.js"></script>
 
-  <!-- 2 · Reusable runner (relies on loadPy) -->
-  <script type="module" src="../js/run_demo.js?v5"></script>
+  <!-- Re‑usable runner -->
+  <script type="module" src="../js/run_demo.js"></script>
 </head><body>
   <h2>Textured Sphere</h2>
 
@@ -25,9 +24,8 @@
   <p id="status"></p>
   <div id="output"></div>
 
-  <!-- Call the runner -->
   <script type="module">
-    import { runDemo } from "../js/run_demo.js?v5";
+    import { runDemo } from "../js/run_demo.js";
     document.getElementById("runBtn").onclick = () =>
       runDemo("circle_input.py", { Weak: 100, Medium: 0, High: 0 });
   </script>

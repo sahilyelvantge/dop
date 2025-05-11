@@ -1,5 +1,5 @@
 /* docs/js/run_demo.js
- * Robust helper that   (1) loads script,   (2) feeds args,   (3) returns a PNG
+ * Generic helper: fetch .py, pass JSON args, show the PNG result.
  */
 export async function runDemo(pyFile, defaults = {}) {
   const status = document.getElementById("status");
@@ -7,25 +7,29 @@ export async function runDemo(pyFile, defaults = {}) {
   outDiv.innerHTML = "";
   status.textContent = "🔄 Loading Python…";
 
-  /* get (or create) global pyodide */
+  /* ensure loadPy exists (dynamic‑import if user omitted pyinit tag) */
+  if (typeof window.loadPy !== "function") {
+    const base = location.pathname.includes("/demos/") ? "../js/" : "js/";
+    await import(base + "pyinit.js");
+  }
+
   const py = await window.loadPy().catch(e => {
-    status.textContent = "❌ Pyodide failed – see console";
-    console.error(e); return null;
+    status.textContent = "❌ Pyodide failed – see console"; console.error(e);
   });
   if (!py) return;
 
-  /* compute correct relative path: on /demos/ pages we need ../py/ */
+  /* correct relative path to the .py file */
   const base = location.pathname.includes("/demos/") ? "../py/" : "py/";
   const resp = await fetch(base + pyFile);
-  if (!resp.ok) { status.textContent = "❌ Python file not found"; return; }
+  if (!resp.ok) { status.textContent = "❌ Python file not found"; return; }
   const src = await resp.text();
 
-  /* collect inputs */
+  /* gather form values */
   const fd = new FormData(document.getElementById("demoForm"));
-  const args = {...defaults};
-  for (const [k,v] of fd.entries()) if (v !== "") args[k] = v;
+  const args = { ...defaults };
+  for (const [k, v] of fd.entries()) if (v !== "") args[k] = v;
 
-  /* wrapper: returns (not prints) the Base‑64 PNG */
+  /* wrap script so it *returns* the PNG (not print) */
   const code = `
 import matplotlib, base64, io, json
 matplotlib.use("Agg")
@@ -39,11 +43,10 @@ base64.b64encode(buf.getvalue()).decode()
 
   try {
     status.textContent = "▶ Running…";
-    const png64 = await py.runPythonAsync(code);   // <-- return value
+    const png64 = await py.runPythonAsync(code);
     outDiv.innerHTML = '<img src="data:image/png;base64,' + png64 + '"/>';
     status.textContent = "✅ Done";
   } catch (err) {
-    status.textContent = "❌ Python error – see console";
-    console.error(err);
+    status.textContent = "❌ Python error – see console"; console.error(err);
   }
 }
