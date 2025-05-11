@@ -2,7 +2,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 import matplotlib.colors as mcolors
-from scipy.ndimage import gaussian_filter
+
+# Install scipy if not available (for Pyodide/web environments)
+try:
+    from scipy.ndimage import gaussian_filter
+except ImportError:
+    import micropip
+    await micropip.install("scipy")
+    from scipy.ndimage import gaussian_filter
 
 # ---------- parse CSV ------------------------------------------------
 csv = (args.get("csv","") or "").strip()
