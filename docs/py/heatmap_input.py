@@ -1,38 +1,32 @@
 """
-heatmap_input.py
-================
-Expects args["csv"] with one line per catalyst:
-
-    Weak,Medium,High
-    Weak,Medium,High
-    ...
-
-For every row it produces a 200×200 "elemental map" that uses a single
-colour scale — light for weak, mid‑tone for medium, dark for high.  All
-maps are arranged in a neat grid.
-
-Visual style (colours & layout) matches the screenshot the user supplied.
+heatmap_input.py  •  smooth one‑hue gradient per catalyst
+---------------------------------------------------------
+✓ Keeps the “Elemental Mapping – Gradient Distribution” look
+✓ One colour scale per catalyst (Weak → Medium → High)
+✓ Adds a side legend for each subplot
+✓ Works with any number of catalyst rows passed via args["csv"]
 """
 
-import numpy as np, matplotlib.pyplot as plt, math, random
+import numpy as np, matplotlib.pyplot as plt, math, matplotlib.colors as mcolors, json
 
-# ---------- read CSV -------------------------------------------------
+# ---------- parse CSV from JS ---------------------------------------
 csv = (args.get("csv", "") or "").strip()
 if not csv:
-    csv = "100,0,0"
+    csv = "100,0,0"            # default single row
 
-rows = [r.strip() for r in csv.splitlines() if r.strip()]
-percents = []
-for r in rows:
+rows = []
+for line in csv.splitlines():
+    parts = [p.strip() for p in line.split(",")[:3]]
+    if len(parts) != 3: continue
     try:
-        w,m,h = (float(x) for x in r.split(",")[:3])
-        total = max(w+m+h, 1e-6)
-        percents.append({"Weak":w/total, "Medium":m/total, "High":h/total})
+        w, m, h = map(float, parts)
+        tot = max(w + m + h, 1e-6)
+        rows.append({"Weak": w/tot, "Medium": m/tot, "High": h/tot})
     except ValueError:
         pass
 
-if not percents:
-    percents = [{"Weak":1.0, "Medium":0, "High":0}]
+if not rows:
+    rows = [{"Weak":1.0, "Medium":0, "High":0}]
 
 # ---------- colour palettes (cycled) --------------------------------
 palettes = [
@@ -42,50 +36,72 @@ palettes = [
     [(1.0 ,0.92,0.92), (0.95,0.50,0.50), (0.75,0.15,0.15)]   # red
 ]
 
-# ---------- helper: smooth noise without SciPy ----------------------
-def make_field(res=50, upscale=4):
-    """Low‑res random field → nearest‑neighbour upscale → 2D array"""
-    low = np.random.rand(res, res)
-    return np.kron(low, np.ones((upscale, upscale)))
+# ---------- helper to build a smooth field --------------------------
+def smooth_field(size=200, octaves=4):
+    """
+    Build a smooth-ish noise: add several low‑res random layers and upscale.
+    No SciPy needed; we rely on imshow interpolation later anyway.
+    """
+    base = np.zeros((size, size))
+    for i in range(octaves):
+        step = 2 ** (i + 4)              # 16,32,64…
+        small = np.random.rand(size//step, size//step)
+        base += np.kron(small, np.ones((step, step)))
+    base /= octaves
+    return base
 
-# ---------- build figure -------------------------------------------
-n = len(percents)
+# ---------- plot grid -----------------------------------------------
+n = len(rows)
 cols = math.ceil(math.sqrt(n))
 rows_grid = math.ceil(n / cols)
-fig, axes = plt.subplots(rows_grid, cols, figsize=(5*cols, 4*rows_grid),
-                         squeeze=False)
+
+fig_w = 5 * cols
+fig_h = 4 * rows_grid
+fig, axes = plt.subplots(rows_grid, cols, figsize=(fig_w, fig_h), squeeze=False)
 fig.suptitle("Elemental Mapping – Gradient Distribution", fontsize=16, y=.96)
 
-for idx, pc in enumerate(percents):
+for idx, pct in enumerate(rows):
     r, c = divmod(idx, cols)
     ax = axes[r][c]
 
-    # synthetic spatial field
-    field = make_field()
-    flat = field.flatten()
-    order = np.argsort(flat)
+    # base smooth field → values 0‑1
+    field = smooth_field()
 
-    w_end   = int(len(flat) * pc["Weak"])
-    m_end   = int(len(flat) * (pc["Weak"] + pc["Medium"]))
+    # thresholds based on percentages
+    weak_thr   = pct["Weak"]
+    med_thr    = pct["Weak"] + pct["Medium"]
 
+    # choose palette
     pal = palettes[idx % len(palettes)]
-    rgb = np.zeros((len(flat), 3))
-    rgb[order[:w_end]]      = pal[0]      # weak
-    rgb[order[w_end:m_end]] = pal[1]      # medium
-    rgb[order[m_end:]]      = pal[2]      # high
+    cmap = mcolors.LinearSegmentedColormap.from_list(
+        f"pal{idx}", pal, N=256)
 
-    img = rgb.reshape(field.shape + (3,))
-    ax.imshow(img)
+    # create mask weights 0‑1 across three ranges
+    # values < weak_thr  → 0‑0.33  ;  weak_thr‑med_thr → 0.34‑0.66 ; rest → 0.67‑1
+    out = np.zeros_like(field)
+    out[field < weak_thr] = field[field < weak_thr] / weak_thr * 0.33
+    mid_mask = (field >= weak_thr) & (field < med_thr)
+    out[mid_mask] = 0.34 + (field[mid_mask]-weak_thr)/(med_thr-weak_thr+1e-9)*0.32
+    out[field >= med_thr] = 0.67 + (field[field >= med_thr]-med_thr)/(1-med_thr)*0.33
+
+    im = ax.imshow(out, cmap=cmap, interpolation="bilinear")
     ax.set_axis_off()
 
-    # caption
+    # colour‑bar legend
+    cb = fig.colorbar(
+        im, ax=ax, fraction=0.046, pad=0.02,
+        ticks=[0.17, 0.50, 0.83]               # roughly ⅙,½,5⁄6
+    )
+    cb.ax.set_yticklabels(["Weak", "Medium", "High"], fontsize=9)
+
+    # title
     ax.set_title(
         f"Catalyst {idx+1}\n"
-        f"Weak: {pc['Weak']*100:.1f}%, Medium: {pc['Medium']*100:.1f}%, High: {pc['High']*100:.1f}%",
-        fontsize=12
+        f"Weak: {pct['Weak']*100:.1f}%, Medium: {pct['Medium']*100:.1f}%, High: {pct['High']*100:.1f}%",
+        fontsize=11
     )
 
-# hide any empty subplots (if total isn’t a perfect square)
+# hide unused subplots
 for k in range(n, rows_grid*cols):
     axes[k//cols][k%cols].set_visible(False)
 
