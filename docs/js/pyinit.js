@@ -1,14 +1,16 @@
-/* Load Pyodide once and cache globally */
+/* docs/js/pyinit.js
+ * Load Pyodide once, no micropip, just the std‑packages included in Pyodide.
+ */
 window.loadPy = async () => {
-  if (window.pyodide) return window.pyodide;
+  if (window.pyodide) return window.pyodide;   // reuse if already loaded
 
-  /* 1 · Load core */
+  /* core download (~8 MB) */
   window.pyodide = await loadPyodide({
     indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/"
   });
 
-  /* 2 · Load the std packages we need – Matplotlib is already pre‑built */
-  await pyodide.loadPackage(["matplotlib"]);   // numpy, pillow auto‑deps
+  /* Matplotlib and its deps are pre‑built inside the bundle. */
+  await pyodide.loadPackage(["matplotlib"]);    // numpy, pillow auto‑deps
   await pyodide.runPythonAsync("import matplotlib; matplotlib.use('Agg')");
 
   return window.pyodide;
