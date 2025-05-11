@@ -5,8 +5,12 @@ export async function runDemo(pyFile, defaults = {}) {
     status.textContent = "🔄 Loading Python…";
     const py = await window.loadPy();
   
-    const src = await (await fetch(`/dop/py/${pyFile}`)).text();   // note /dop
-    /* collect form data */
+    // ".." from demos/ → ../py/ ,  from index.html it resolves to /py/ automatically
+    const src = await (await fetch(`../py/${pyFile}`)).text();
+    if (!src) {
+      status.textContent = "❌ Python file not found.";
+      return;
+    }
     const fd = new FormData(document.getElementById("demoForm"));
     const args = {...defaults};
     for (const [k, v] of fd.entries()) if (v) args[k] = v;
