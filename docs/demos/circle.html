@@ -1,97 +1,27 @@
 <!DOCTYPE html><html><head>
-  <meta charset="utf-8" /><title>Catalyst Spheres</title>
+  <meta charset="utf-8" />
+  <title>Catalyst Spheres</title>
   <link rel="stylesheet" href="../css/styles.css" />
   <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
   <script type="module" src="../js/run_demo.js"></script>
-  <style>
-  table{border-collapse:collapse;margin-top:8px}
-  td{padding:4px}
-  </style>
   </head><body>
-  <h2>Catalyst Spheres</h2>
+  <h2>Catalyst Spheres – Paste CSV</h2>
   
-  <select id="modeSel">
-    <option value="Single" selected>Single catalyst</option>
-    <option value="All">All 4 catalysts</option>
-  </select>
+  <p>One catalyst per line: <code>Name,Weak%,Medium%,High%</code></p>
+  <textarea id="csv" rows="6" cols="60">
+  NiO@Ce3O4,100,0,0
+  NiO@SiO2,59.3,9.43,31.3
+  NiO@ZrO2,5.70,0,94.3
+  NiO@CeO2,84.7,4.85,10.4
+  </textarea><br>
   
-  <div id="singleForm">
-    Catalyst 
-    <select id="singleCat">
-      <option>NiO@Ce3O4</option><option>NiO@SiO2</option>
-      <option>NiO@ZrO2</option><option>NiO@CeO2</option>
-    </select><br><br>
-    Weak %  <input id="sWeak"   type="number" step="0.1" value="100">
-    Medium % <input id="sMed"    type="number" step="0.1" value="0">
-    High %  <input id="sHigh"   type="number" step="0.1" value="0">
-  </div>
-  
-  <div id="allForm" style="display:none">
-    <table border="1">
-      <tr><th>Catalyst</th><th>Weak %</th><th>Medium %</th><th>High %</th></tr>
-      <tr><td>NiO@Ce3O4</td>
-          <td><input id="c1w" type="number" step="0.1" value="100"></td>
-          <td><input id="c1m" type="number" step="0.1" value="0"></td>
-          <td><input id="c1h" type="number" step="0.1" value="0"></td></tr>
-      <tr><td>NiO@SiO2</td>
-          <td><input id="c2w" type="number" step="0.1" value="59.3"></td>
-          <td><input id="c2m" type="number" step="0.1" value="9.43"></td>
-          <td><input id="c2h" type="number" step="0.1" value="31.3"></td></tr>
-      <tr><td>NiO@ZrO2</td>
-          <td><input id="c3w" type="number" step="0.1" value="5.7"></td>
-          <td><input id="c3m" type="number" step="0.1" value="0"></td>
-          <td><input id="c3h" type="number" step="0.1" value="94.3"></td></tr>
-      <tr><td>NiO@CeO2</td>
-          <td><input id="c4w" type="number" step="0.1" value="84.7"></td>
-          <td><input id="c4m" type="number" step="0.1" value="4.85"></td>
-          <td><input id="c4h" type="number" step="0.1" value="10.4"></td></tr>
-    </table>
-  </div>
-  
-  <br><button id="runBtn">Run ▶</button>
+  <button id="runBtn">Run ▶</button>
   <p id="status"></p>
   <div id="output"></div>
   
   <script type="module">
-  import { runDemo } from "../js/run_demo.js";
-  
-  const modeSel=document.getElementById("modeSel");
-  const singleForm=document.getElementById("singleForm");
-  const allForm=document.getElementById("allForm");
-  
-  modeSel.onchange=()=>{                       // toggle forms
-    const all=modeSel.value==="All";
-    singleForm.style.display=all?"none":"block";
-    allForm.style.display   =all?"block":"none";
-  };
-  
-  document.getElementById("runBtn").onclick=()=>{
-    const mode=modeSel.value;
-    if(mode==="Single"){
-      runDemo("circle_input.py",{
-        mode:"Single",
-        Catalyst:document.getElementById("singleCat").value,
-        Weak:document.getElementById("sWeak").value,
-        Medium:document.getElementById("sMed").value,
-        High:document.getElementById("sHigh").value
-      });
-    }else{
-      runDemo("circle_input.py",{
-        mode:"All",
-        "NiO@Ce3O4_weak":  document.getElementById("c1w").value,
-        "NiO@Ce3O4_medium":document.getElementById("c1m").value,
-        "NiO@Ce3O4_high":  document.getElementById("c1h").value,
-        "NiO@SiO2_weak":   document.getElementById("c2w").value,
-        "NiO@SiO2_medium": document.getElementById("c2m").value,
-        "NiO@SiO2_high":   document.getElementById("c2h").value,
-        "NiO@ZrO2_weak":   document.getElementById("c3w").value,
-        "NiO@ZrO2_medium": document.getElementById("c3m").value,
-        "NiO@ZrO2_high":   document.getElementById("c3h").value,
-        "NiO@CeO2_weak":   document.getElementById("c4w").value,
-        "NiO@CeO2_medium": document.getElementById("c4m").value,
-        "NiO@CeO2_high":   document.getElementById("c4h").value
-      });
-    }
-  };
+    import { runDemo } from "../js/run_demo.js";
+    document.getElementById("runBtn").onclick = () =>
+      runDemo("circle_input.py", { csv: document.getElementById("csv").value });
   </script>
   </body></html>
