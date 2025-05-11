@@ -1,13 +1,12 @@
 <!DOCTYPE html><html><head>
-  <meta charset="utf-8" />
-  <title>Catalyst Spheres</title>
+  <meta charset="utf-8" /><title>Catalyst Spheres</title>
   <link rel="stylesheet" href="../css/styles.css" />
   <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
   <script type="module" src="../js/run_demo.js"></script>
   </head><body>
   
   <div class="card">
-    <h2>Catalyst Spheres</h2>
+    <h2>Generate Custom Sphere Grid</h2>
   
     <label>Number of catalysts 
       <input id="count" type="number" min="1" max="20" value="4">
@@ -18,7 +17,7 @@
       <table id="catTable"></table>
     </form>
   
-    <button id="runBtn" disabled>Run ▶</button>
+    <button id="runBtn" disabled>Run ▶</button>
     <p id="status"></p>
     <div id="output"></div>
   </div>
@@ -59,7 +58,7 @@
     runDemo("circle_input.py", { csv });
   };
   
-  /* default 4 rows on first load */
+  /* default 4 rows */
   buildRows(4);
   </script>
   </body></html>

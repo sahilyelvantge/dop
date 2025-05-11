@@ -1,53 +1,83 @@
-/* ---------- Base ---------------------------------------------------- */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap");
+/* -------------------------  Google Font  ----------------------------- */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap");
 
+/* -------------------------  Theme tokens  ---------------------------- */
 :root{
-  --bg     : #f5f7fa;
-  --card   : #ffffff;
-  --accent : #4f46e5;           /* indigo‑600 */
-  --accent‑light: #eef2ff;      /* indigo‑50  */
-  --text   : #1f2937;           /* gray‑800   */
-  --border : #e5e7eb;           /* gray‑200   */
+  --bg‑grad  : linear-gradient(135deg,#fdfbfb 0%,#ebedee 100%);
+  --nav‑txt  : #475569;          /* slate‑600  */
+  --accent   : #6366f1;          /* indigo‑500 */
+  --accent‑hover:#4f46e5;        /* indigo‑600 */
+  --card‑bg  : #ffffff;
+  --card‑border:#e5e7eb;         /* gray‑200   */
+  --text     : #1e293b;          /* slate‑800  */
 }
 
-*{box-sizing:border-box}
+/* -------------------------  Base ------------------------------------- */
+*{box-sizing:border-box; margin:0}
 body{
-  font-family:"Inter",system-ui,sans-serif;
-  margin:0; background:var(--bg); color:var(--text);
-  display:flex; justify-content:center; padding:2rem 1rem;
+  font-family:"Poppins",system-ui,sans-serif;
+  background:var(--bg‑grad); color:var(--text);
+  min-height:100vh; display:flex; flex-direction:column; align-items:center;
+  padding:2rem 1rem;
 }
-h2{font-weight:600; text-align:center; margin-top:0}
 
-/* ---------- Card ---------------------------------------------------- */
+/* -------------------------  Headings --------------------------------- */
+h1,h2{font-weight:700; margin-bottom:.4em; text-align:center}
+h1{
+  font-size:2.25rem;
+  background:linear-gradient(90deg,#6d28d9,#3b82f6);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+}
+h2{font-size:1.6rem}
+
+/* -------------------------  Cards & Containers ----------------------- */
 .card{
-  background:var(--card); border:1px solid var(--border);
-  border-radius:12px; padding:2rem; width:100%; max-width:860px;
-  box-shadow:0 6px 18px rgba(0,0,0,.05);
+  background:var(--card‑bg); border:1px solid var(--card‑border);
+  border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,.06);
+  padding:2rem; width:100%; max-width:900px;
 }
 
-/* ---------- Controls ------------------------------------------------ */
-label{font-weight:500}
-input[type=number]{width:80px; padding:.3rem .4rem; border:1px solid var(--border);
-  border-radius:6px; background:#fff}
-input[type=number]:focus{outline:2px solid var(--accent‑light); border-color:var(--accent)}
-select{padding:.45rem .6rem; border:1px solid var(--border); border-radius:6px}
-
+/* -------------------------  Buttons ---------------------------------- */
 button{
-  background:var(--accent); color:#fff; font-weight:600; border:none;
-  padding:.6rem 1.3rem; border-radius:8px; cursor:pointer; margin-top:1rem
+  background:var(--accent); color:#fff; font-weight:600;
+  border:none; border-radius:8px;
+  padding:.65rem 1.4rem; cursor:pointer; margin-top:1rem;
+  transition:background .2s,transform .2s;
 }
+button:hover:not(:disabled){background:var(--accent‑hover); transform:translateY(-2px)}
 button:disabled{opacity:.5; cursor:not-allowed}
-button:hover:not(:disabled){background:#4338ca}
 
-/* ---------- Table --------------------------------------------------- */
+/* -------------------------  Forms ------------------------------------ */
+label{font-weight:500}
+input[type=number]{width:90px; padding:.35rem .45rem;
+  border:1px solid var(--card‑border); border-radius:6px}
+input[type=number]:focus{border-color:var(--accent); outline:none}
+
+/* -------------------------  Table ------------------------------------ */
 table{width:100%; border-collapse:collapse; margin-top:1rem}
-th{background:var(--accent‑light); font-weight:600}
-td,th{padding:.55rem .6rem; text-align:center}
+th{background:#f3f4f6; font-weight:600}
+td,th{padding:.55rem .6rem; text-align:center; border:1px solid var(--card‑border)}
 tr:nth-child(even){background:#fafafa}
 td:first-child{font-weight:500}
-td,th{border:1px solid var(--border)}
 
-/* ---------- Status / Output ---------------------------------------- */
-#status{margin:.5rem 0 0; font-weight:500}
+/* -------------------------  Index grid ------------------------------- */
+.grid{
+  display:grid; gap:1.4rem;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  margin-top:2rem;
+}
+.tile{
+  background:var(--card‑bg); border:1px solid var(--card‑border);
+  border-radius:12px; overflow:hidden; text-decoration:none; color:inherit;
+  box-shadow:0 4px 14px rgba(0,0,0,.04); transition:transform .25s ease,box-shadow .25s;
+}
+.tile img{width:100%; display:block}
+.tile span{
+  display:block; padding:1rem; font-weight:600; text-align:center;
+}
+.tile:hover{transform:translateY(-6px); box-shadow:0 8px 22px rgba(0,0,0,.08)}
+
+/* -------------------------  Output ----------------------------------- */
+#status{margin:.6rem 0 0; font-weight:500; text-align:center}
 #output{margin-top:1rem; text-align:center}
-#output img{max-width:100%; border:1px solid var(--border); border-radius:8px}
+#output img{max-width:100%; border:1px solid var(--card‑border); border-radius:10px}
