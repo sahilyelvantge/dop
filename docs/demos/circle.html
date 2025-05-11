@@ -1,0 +1,25 @@
+<!DOCTYPE html><html><head>
+    <meta charset="utf-8"><title>Textured Sphere</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+    <script type="module" src="../js/pyinit.js"></script>
+    <script type="module" src="../js/run_demo.js"></script>
+    </head><body>
+    <h2>Textured Sphere</h2>
+    
+    <form id="demoForm">
+      Weak % <input name="Weak" type="number" step="0.1">
+      Medium % <input name="Medium" type="number" step="0.1">
+      High % <input name="High" type="number" step="0.1">
+    </form>
+    
+    <button id="runBtn">Run ▶</button>
+    <p id="status"></p>
+    <div id="output"></div>
+    
+    <script type="module">
+    import {runDemo} from "../js/run_demo.js";
+    document.getElementById("runBtn").onclick = () =>
+      runDemo("circle.py", {Weak:100,Medium:0,High:0});  // defaults
+    </script>
+    </body></html>
