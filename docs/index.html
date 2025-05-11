@@ -5,17 +5,20 @@
   </head><body>
   
   <h1>Catalyst Python Demos</h1>
-  <p style="text-align:center">Choose a demo and run it live in your browser.</p>
+  <p style="text-align:center;color:var(--nav‑txt)">
+    Choose a demo and run it live in your browser.
+  </p>
   
   <div class="grid">
     <a class="tile" href="demos/circle.html">
-      <img src="assets/thumbs/circ_thumb.png" alt="">
+      <img src="assets/thumbs/circ_thumb.png" alt="Sphere demo">
       <span>Custom Sphere Grid</span>
     </a>
-    <!-- add more tiles for other demos here -->
+  
+    <a class="tile" href="demos/heatmap.html">
+      <img src="assets/thumbs/heat_thumb.png" alt="Heat‑map demo">
+      <span>Heat‑Map Visualizer</span>
+    </a>
   </div>
   
-  <!-- loads Pyodide once (if you ever add a demo that runs from index) -->
-  <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
-  <script type="module" src="js/pyinit.js"></script>
   </body></html>

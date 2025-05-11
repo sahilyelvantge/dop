@@ -1,0 +1,34 @@
+<!DOCTYPE html><html><head>
+    <meta charset="utf-8" />
+    <title>Heat‑Map Demo</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+    <script type="module" src="../js/run_demo.js"></script>
+    </head><body>
+    
+    <div class="card">
+      <h2>Generate Custom Heat‑Map</h2>
+    
+      <form id="demoForm">
+        Weak %  <input name="Weak"   type="number" step="0.1" value="60">
+        Medium % <input name="Medium" type="number" step="0.1" value="30">
+        High %  <input name="High"   type="number" step="0.1" value="10">
+      </form>
+    
+      <button id="runBtn">Run ▶</button>
+      <p id="status"></p>
+      <div id="output"></div>
+    
+      <script type="module">
+        import { runDemo } from "../js/run_demo.js";
+        document.getElementById("runBtn").onclick = () => {
+          const fd = new FormData(document.getElementById("demoForm"));
+          runDemo("heatmap_input.py", {
+            Weak:   fd.get("Weak"),
+            Medium: fd.get("Medium"),
+            High:   fd.get("High")
+          });
+        };
+      </script>
+    </div>
+    </body></html>
