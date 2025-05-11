@@ -5,8 +5,6 @@ export async function runDemo(pyFile, defaults = {}) {
   
   try {
     status.textContent = "🔄 Initializing Pyodide...";
-    
-    // Initialize Pyodide if not already loaded
     if (!window.pyodide) {
       window.pyodide = await loadPyodide({
         indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/"
@@ -14,19 +12,23 @@ export async function runDemo(pyFile, defaults = {}) {
     }
 
     status.textContent = "🔄 Loading packages...";
-    await window.pyodide.loadPackage(["numpy", "matplotlib", "scipy", "micropip"]);
+    await window.pyodide.loadPackage(["numpy", "matplotlib", "scipy"]);
 
     status.textContent = "🔄 Fetching script...";
     const resp = await fetch(`../py/${pyFile}`);
     if (!resp.ok) throw new Error("Script not found");
     const src = await resp.text();
 
-    // Gather form inputs
+    // Gather and sanitize form inputs
     const fd = new FormData(document.getElementById("demoForm"));
     const args = { ...defaults };
     for (const [k,v] of fd.entries()) if (v) args[k] = v;
 
-    // Prepare the Python code
+    // Properly escape JSON for Python
+    const argsJSON = JSON.stringify(args)
+      .replace(/\\/g, '\\\\')
+      .replace(/"/g, '\\"');
+
     const code = `
 import matplotlib
 matplotlib.use('Agg')
@@ -35,11 +37,14 @@ import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
 from mpl_toolkits.mplot3d import Axes3D
 
-args = json.loads('${JSON.stringify(args)}')
+try:
+    args = json.loads(r"""${argsJSON}""")
+except json.JSONDecodeError as e:
+    print(f"JSON decode error: {e}")
+    raise
 
 ${src}
 
-# Convert figure to base64 and print
 buf = io.BytesIO()
 plt.savefig(buf, format='png', bbox_inches='tight', dpi=300)
 plt.close()
@@ -49,7 +54,6 @@ print("__IMG__" + base64.b64encode(buf.getvalue()).decode('utf-8'))
     status.textContent = "▶ Running Python...";
     const result = await window.pyodide.runPythonAsync(code);
     
-    // Extract and display the image
     const imgStart = result.indexOf("__IMG__");
     if (imgStart >= 0) {
       const imgData = result.slice(imgStart + 7);
