@@ -1,86 +1,93 @@
-import matplotlib.pyplot as plt
-import numpy as np
-import random
+"""
+circle_input.py  –  dynamic version
+-----------------------------------
+Reads a CSV list of catalysts from args["csv"]:
 
-# ---- collect user args --------------------------------------------------
-try:
-    args          # provided by run_demo.js
-except NameError:
-    args = {}
+    NiO@Ce3O4,100,0,0
+    NiO@SiO2,59.3,9.43,31.3
+    ...
 
-weak_pct  = float(args.get("Weak",   100))
-med_pct   = float(args.get("Medium",   0))
-high_pct  = float(args.get("High",    0))
+For each row it draws a textured sphere whose surface areas follow
+Weak / Medium / High percentages.  All spheres are placed in an NxM grid.
+"""
+import matplotlib.pyplot as plt, numpy as np, random, math, io, base64, json
 
-# purple gradient (user can override with a list of 3 RGB tuples)
-default_col = [(0.9,0.8,1.0), (0.7,0.5,0.9), (0.5,0.2,0.7)]
-colors = args.get("colors", default_col)
-
-data = {"Weak": weak_pct, "Medium": med_pct, "High": high_pct}
-
-# ---- helper for bump parameters -----------------------------------------
+# -------- helper for bump parameters -----------------------------
 def tex_params(inten):
-    if inten == "Weak":   return 5, 0.15
-    if inten == "Medium": return 10, 0.10
-    return 15, 0.05
+    return (5,0.15) if inten=="Weak" else (10,0.10) if inten=="Medium" else (15,0.05)
 
-# ---- build textured sphere ----------------------------------------------
-fig = plt.figure(figsize=(6,6))
-ax  = fig.add_subplot(111, projection='3d')
+def make_gradient(i):
+    """Return 3 RGB tuples, cycling through 4 base palettes."""
+    palettes = [
+        [(0.9,0.8,1.0),(0.7,0.5,0.9),(0.5,0.2,0.7)],   # purple
+        [(0.8,0.9,1.0),(0.3,0.6,0.9),(0.1,0.3,0.8)],   # blue
+        [(0.8,1.0,0.8),(0.4,0.8,0.4),(0.1,0.6,0.3)],   # green
+        [(1.0,0.8,0.8),(0.9,0.4,0.4),(0.7,0.1,0.1)]    # red
+    ]
+    return palettes[i % len(palettes)]
 
-u = np.linspace(0, 2*np.pi, 100)
-v = np.linspace(0,     np.pi, 50)
-x = np.outer(np.cos(u), np.sin(v))
-y = np.outer(np.sin(u), np.sin(v))
-z = np.outer(np.ones(u.size), np.cos(v))
+def sphere(ax, perc, colors, title):
+    u = np.linspace(0, 2*np.pi, 100)
+    v = np.linspace(0, np.pi, 50)
+    x = np.outer(np.cos(u), np.sin(v))
+    y = np.outer(np.sin(u), np.sin(v))
+    z = np.outer(np.ones(u.size), np.cos(v))
 
-# assign each vertex an intensity according to %, shuffled for randomness
-verts = len(u) * len(v)
-order = (["Weak"]*int(data["Weak"]/100*verts) +
-         ["Medium"]*int(data["Medium"]/100*verts))
-order += ["High"]*(verts-len(order))
-random.shuffle(order)
+    verts = len(u)*len(v)
+    order = (["Weak"]*int(perc["Weak"]/100*verts) +
+             ["Medium"]*int(perc["Medium"]/100*verts))
+    order += ["High"]*(verts-len(order))
+    random.shuffle(order)
+    idx = 0
 
-imap, idx = np.empty((len(u),len(v)), object), 0
-for i in range(len(u)):
-    for j in range(len(v)):
-        imap[i,j] = order[idx]; idx += 1
+    cmap = np.zeros((len(u),len(v),3))
+    for i in range(len(u)):
+        for j in range(len(v)):
+            inten = order[idx]; idx += 1
+            cmap[i,j] = colors[0] if inten=="Weak" else colors[1] if inten=="Medium" else colors[2]
+            size,space = tex_params(inten)
+            if inten=="Weak":
+                bump = 0.02*np.random.rand()
+            elif inten=="Medium":
+                bump = 0.05*np.sin(u[i]/space)*np.cos(v[j]/space)
+            else:
+                bump = 0.08*(np.sin(u[i]/space)*np.cos(v[j]/space)+
+                             np.sin(2*u[i]/space)*np.cos(2*v[j]/space))
+            factor = 1+bump
+            x[i,j]*=factor; y[i,j]*=factor; z[i,j]*=factor
 
-cmap = np.zeros((len(u),len(v),3))
+    ax.plot_surface(x,y,z,facecolors=cmap,linewidth=0,alpha=0.9,shade=True)
+    ax.set_axis_off(); ax.set_xlim(-1.4,1.4); ax.set_ylim(-1.4,1.4); ax.set_zlim(-1.4,1.4)
+    ax.view_init(elev=30, azim=45)
+    ax.set_title(title, fontsize=10)
 
-for i in range(len(u)):
-    for j in range(len(v)):
-        inten = imap[i,j]
-        cmap[i,j] = colors[0] if inten=="Weak" else \
-                    colors[1] if inten=="Medium" else colors[2]
+# -------- parse incoming args ------------------------------------
+try:
+    csv_text = args["csv"]
+except Exception:
+    csv_text = "NiO@Ce3O4,100,0,0"
 
-        size,space = tex_params(inten)
-        if inten=="Weak":
-            bump = 0.02*np.random.rand()
-        elif inten=="Medium":
-            bump = 0.05*np.sin(u[i]/space)*np.cos(v[j]/space)
-        else:
-            bump = 0.08*(np.sin(u[i]/space)*np.cos(v[j]/space)+
-                         np.sin(2*u[i]/space)*np.cos(2*v[j]/space))
-        factor = 1+bump
-        x[i,j]*=factor; y[i,j]*=factor; z[i,j]*=factor
+rows = [l.strip() for l in csv_text.splitlines() if l.strip()]
+catalysts = []
+for line in rows:
+    name,*vals = [s.strip() for s in line.split(",")]
+    if len(vals)!=3: continue
+    w,m,h = map(float, vals)
+    catalysts.append((name, {"Weak":w,"Medium":m,"High":h}))
 
-ax.plot_surface(x, y, z, facecolors=cmap, alpha=.9, linewidth=0, shade=True)
+if not catalysts:
+    catalysts = [("Example", {"Weak":100,"Medium":0,"High":0})]
 
-# ---- legend to the side --------------------------------------------------
-lx, ly, lz = 2.2, 0, 0
-gap = 0.7
-for k,(inten,pct) in enumerate(data.items()):
-    if pct<=0: continue
-    col = colors[0] if inten=="Weak" else colors[1] if inten=="Medium" else colors[2]
-    lu = np.linspace(0,2*np.pi,20); lv=np.linspace(0,np.pi,10); r=0.2
-    sx = r*np.outer(np.cos(lu),np.sin(lv))+lx
-    sy = r*np.outer(np.sin(lu),np.sin(lv))+ly-k*gap
-    sz = r*np.outer(np.ones(lu.size),np.cos(lv))+lz
-    ax.plot_surface(sx, sy, sz, color=col, alpha=.85, linewidth=0, zorder=1)
-    ax.text(lx+.3, ly-k*gap, lz, f"{inten}: {pct:.1f}%", zorder=10,
-            color='black', backgroundcolor='white')
+# -------- build figure ------------------------------------------
+n = len(catalysts)
+cols = math.ceil(math.sqrt(n))
+rows = math.ceil(n / cols)
+fig = plt.figure(figsize=(5*cols, 4*rows))
+grid = fig.add_gridspec(rows, cols)
 
-ax.set_axis_off(); ax.set_xlim(-1.5,1.5); ax.set_ylim(-1.5,1.5); ax.set_zlim(-1.5,1.5)
-ax.view_init(elev=30, azim=45)
-plt.title("Textured Sphere")
+for idx,(name,perc) in enumerate(catalysts):
+    r,c = divmod(idx, cols)
+    ax = fig.add_subplot(grid[r,c], projection='3d')
+    sphere(ax, perc, make_gradient(idx), name)
+
+fig.suptitle("Catalyst Textured Spheres", fontsize=14)

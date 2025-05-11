@@ -1,27 +1,19 @@
 <!DOCTYPE html><html><head>
   <meta charset="utf-8" />
-  <title>Textured Sphere Demo</title>
+  <title>Catalyst Spheres</title>
   <link rel="stylesheet" href="../css/styles.css" />
   <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
   <script type="module" src="../js/run_demo.js"></script>
   </head><body>
-  <h2>Textured Sphere Demo</h2>
+  <h2>Catalyst Spheres – Paste CSV</h2>
   
-  <form id="demoForm">
-    Catalyst 
-    <select name="Catalyst" id="catSel">
-      <option>NiO@Ce3O4</option>
-      <option>NiO@SiO2</option>
-      <option>NiO@ZrO2</option>
-      <option>NiO@CeO2</option>
-      <option>All</option>
-    </select>
-    <br><br>
-    <!-- Custom percentages (only used if Catalyst not in list) -->
-    Weak %  <input name="Weak"   type="number" step="0.1">
-    Medium % <input name="Medium" type="number" step="0.1">
-    High %  <input name="High"   type="number" step="0.1">
-  </form>
+  <p>One catalyst per line: <code>Name,Weak%,Medium%,High%</code></p>
+  <textarea id="csv" rows="6" cols="60">
+  NiO@Ce3O4,100,0,0
+  NiO@SiO2,59.3,9.43,31.3
+  NiO@ZrO2,5.70,0,94.3
+  NiO@CeO2,84.7,4.85,10.4
+  </textarea><br>
   
   <button id="runBtn">Run ▶</button>
   <p id="status"></p>
@@ -30,6 +22,6 @@
   <script type="module">
     import { runDemo } from "../js/run_demo.js";
     document.getElementById("runBtn").onclick = () =>
-      runDemo("circle_input.py", { Catalyst: document.getElementById("catSel").value });
+      runDemo("circle_input.py", { csv: document.getElementById("csv").value });
   </script>
   </body></html>
