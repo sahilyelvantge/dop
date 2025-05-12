@@ -1,70 +1,53 @@
+
+/* docs/js/run_demo.js
+ * Generic helper: fetch .py, pass JSON args, show the PNG result.
+ */
 export async function runDemo(pyFile, defaults = {}) {
   const status = document.getElementById("status");
   const outDiv = document.getElementById("output");
   outDiv.innerHTML = "";
-  
-  try {
-    status.textContent = "🔄 Initializing Pyodide...";
-    if (!window.pyodide) {
-      window.pyodide = await loadPyodide({
-        indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/"
-      });
-    }
+  status.textContent = "🔄 Loading Python…";
 
-    status.textContent = "🔄 Loading packages...";
-    await window.pyodide.loadPackage(["numpy", "matplotlib", "scipy"]);
+  /* ensure loadPy exists (dynamic‑import if user omitted pyinit tag) */
+  if (typeof window.loadPy !== "function") {
+    const base = location.pathname.includes("/demos/") ? "../js/" : "js/";
+    await import(base + "pyinit.js");
+  }
 
-    status.textContent = "🔄 Fetching script...";
-    const resp = await fetch(`../py/${pyFile}`);
-    if (!resp.ok) throw new Error("Script not found");
-    const src = await resp.text();
+  const py = await window.loadPy().catch(e => {
+    status.textContent = "❌ Pyodide failed – see console"; console.error(e);
+  });
+  if (!py) return;
 
-    // Gather and sanitize form inputs
-    const fd = new FormData(document.getElementById("demoForm"));
-    const args = { ...defaults };
-    for (const [k,v] of fd.entries()) if (v) args[k] = v;
+  /* correct relative path to the .py file */
+  const base = location.pathname.includes("/demos/") ? "../py/" : "py/";
+  const resp = await fetch(base + pyFile);
+  if (!resp.ok) { status.textContent = "❌ Python file not found"; return; }
+  const src = await resp.text();
 
-    // Properly escape JSON for Python
-    const argsJSON = JSON.stringify(args)
-      .replace(/\\/g, '\\\\')
-      .replace(/"/g, '\\"');
+  /* gather form values */
+  const fd = new FormData(document.getElementById("demoForm"));
+  const args = { ...defaults };
+  for (const [k, v] of fd.entries()) if (v !== "") args[k] = v;
 
-    const code = `
-import matplotlib
-matplotlib.use('Agg')
-import io, base64, json
-import numpy as np
-from matplotlib.colors import LinearSegmentedColormap
-from mpl_toolkits.mplot3d import Axes3D
-
-try:
-    args = json.loads(r"""${argsJSON}""")
-except json.JSONDecodeError as e:
-    print(f"JSON decode error: {e}")
-    raise
-
+  /* wrap script so it *returns* the PNG (not print) */
+  const code = `
+import matplotlib, base64, io, json
+matplotlib.use("Agg")
+args = json.loads(${JSON.stringify(JSON.stringify(args))})
 ${src}
-
 buf = io.BytesIO()
-plt.savefig(buf, format='png', bbox_inches='tight', dpi=300)
-plt.close()
-print("__IMG__" + base64.b64encode(buf.getvalue()).decode('utf-8'))
+import matplotlib.pyplot as _plt
+_plt.savefig(buf, format="png", bbox_inches="tight")
+base64.b64encode(buf.getvalue()).decode()
 `;
 
-    status.textContent = "▶ Running Python...";
-    const result = await window.pyodide.runPythonAsync(code);
-    
-    const imgStart = result.indexOf("__IMG__");
-    if (imgStart >= 0) {
-      const imgData = result.slice(imgStart + 7);
-      outDiv.innerHTML = `<img src="data:image/png;base64,${imgData}"/>`;
-      status.textContent = "✅ Visualization complete";
-    } else {
-      throw new Error("No image data received");
-    }
+  try {
+    status.textContent = "▶️ Running…";
+    const png64 = await py.runPythonAsync(code);
+    outDiv.innerHTML = '<img src="data:image/png;base64,' + png64 + '"/>';
+    status.textContent = "✅ Done";
   } catch (err) {
-    console.error(err);
-    status.textContent = "❌ Error - see console";
-    outDiv.innerHTML = `<pre class="error">${err.message}</pre>`;
+    status.textContent = "❌ Python error – see console"; console.error(err);
   }
 }
