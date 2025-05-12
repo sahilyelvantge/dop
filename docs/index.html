@@ -1,39 +1,93 @@
-<!DOCTYPE html><html><head>
+<!DOCTYPE html>
+<html>
+<head>
   <meta charset="utf-8">
   <title>Catalyst Gallery</title>
   <link rel="stylesheet" href="css/styles.css">
-  </head><body>
-  
-  <h1>Catalyst Python Demos Siu</h1>
-  <p style="text-align:center;color:var(--nav-txt)">
-    Choose a demo and run it live in your browser.
-  </p>
-  
-  <div class="grid">
-    <a class="tile" href="demos/circle.html">
-      <img src="assets/thumbs/circ_thumb.png" alt="">
-      <span>Custom Sphere Grid</span>
-    </a>
-  
-    <a class="tile" href="demos/heatmap.html">
-      <img src="assets/thumbs/heat_thumb.png" alt="">
-      <span>Heat-Map Visualizer</span>
-    </a>
-  
-    <a class="tile" href="demos/cylinder.html">
-      <img src="assets/thumbs/cyli_thumb.png" alt="">
-      <span>Wrapped Cylinder Gradient</span>
-    </a>
+  <style>
+    body {
+      margin: 0;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: #f5f5f5;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+    p {
+      text-align: center;
+      color: var(--nav-txt);
+      margin-bottom: 2rem;
+    }
+    .grid {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 1400px;
+    }
+    .row {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+    .tile {
+      flex: 1 1 auto;
+      max-width: 350px;
+      text-decoration: none;
+    }
+    .tile img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .tile span {
+      display: block;
+      margin-top: 0.5rem;
+      font-size: 1.2rem;
+      color: #333;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>Catalyst Python Demos</h1>
+  <p>Choose a demo and run it live in your browser.</p>
 
-     <a class="tile" href="demos/molecules.html">
-    <img src="assets/thumbs/parti_thumb.png" alt="Molecules dispersion">
-          <span>Dispersion Maps</span>
-          </a>
-      
-          <a class="tile" href="demos/combined.html">
-            <img src="assets/thumbs/comb_thumb.png" alt="">
-            <span>Gradient & Dispersion</span>
-          </a>
+  <div class="grid">
+    <div class="row">
+      <a class="tile" href="demos/circle.html">
+        <img src="assets/thumbs/circ_thumb.png" alt="Sphere Grid">
+        <span>Custom Sphere Grid</span>
+      </a>
+      <a class="tile" href="demos/heatmap.html">
+        <img src="assets/thumbs/heat_thumb.png" alt="Heat Map">
+        <span>Heat-Map Visualizer</span>
+      </a>
+      <a class="tile" href="demos/cylinder.html">
+        <img src="assets/thumbs/cyli_thumb.png" alt="Cylinder Gradient">
+        <span>Wrapped Cylinder Gradient</span>
+      </a>
+    </div>
+    <div class="row">
+      <a class="tile" href="demos/molecules.html">
+        <img src="assets/thumbs/parti_thumb.png" alt="Dispersion Maps">
+        <span>Dispersion Maps</span>
+      </a>
+      <a class="tile" href="demos/combined.html">
+        <img src="assets/thumbs/comb_thumb.png" alt="Gradient & Dispersion">
+        <span>Gradient & Dispersion</span>
+      </a>
+    </div>
   </div>
-  
-  </body></html>
+</body>
+</html>
