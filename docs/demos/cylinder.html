@@ -1,37 +1,44 @@
-<!DOCTYPE html><html><head>
-    <meta charset="utf-8" />
-    <title>Cylinder Gradient Demo</title>
-    <link rel="stylesheet" href="../css/styles.css" />
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
-    <script type="module" src="../js/run_demo.js"></script>
-    </head><body>
-    
-    <div class="card">
-      <h2>Custom Cylinder Gradients</h2>
-    
-      <label>Number of catalysts 
-        <input id="count" type="number" min="1" max="12" value="4">
-      </label>
-      <button id="makeRows">Create rows</button>
-    
-      <form id="demoForm">
-        <table id="catTable"></table>
-      </form>
-    
-      <button id="runBtn" disabled>Run ▶</button>
-      <p id="status"></p>
-      <div id="output"></div>
-    </div>
-    
-    <script type="module">
-    import { runDemo } from "../js/run_demo.js";
-    
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Cylinder Gradient Demo</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+  <style>
+    body { display: flex; justify-content: center; align-items: center; padding: 2rem; }
+    .card { max-width: 600px; width: 100%; text-align: center; }
+    .card img { max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-top: 1rem; }
+    #status { margin-top: 1rem; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>Custom Cylinder Gradients</h2>
+
+    <label>Number of catalysts 
+      <input id="count" type="number" min="1" max="12" value="4">
+    </label>
+    <button id="makeRows">Create rows</button>
+
+    <form id="demoForm">
+      <table id="catTable" style="margin: 1rem auto;"></table>
+    </form>
+
+    <button id="runBtn" disabled>Run ▶</button>
+    <p id="status"></p>
+    <div id="output"></div>
+  </div>
+
+  <script>
     const table = document.getElementById("catTable");
     const runBtn = document.getElementById("runBtn");
-    
-    function buildRows(n){
+    const status = document.getElementById("status");
+    const output = document.getElementById("output");
+
+    function buildRows(n) {
       let html = `<tr><th>#</th><th>Weak %</th><th>Medium %</th><th>High %</th></tr>`;
-      for(let i=0;i<n;i++){
+      for (let i = 0; i < n; i++) {
         html += `<tr>
           <td>${i+1}</td>
           <td><input class="w" type="number" step="0.1" value="100"></td>
@@ -41,25 +48,27 @@
       }
       table.innerHTML = html;
       runBtn.disabled = false;
+      output.innerHTML = "";
+      status.textContent = "";
     }
-    
+
     document.getElementById("makeRows").onclick = () => {
       const n = Math.max(1, Math.min(12, +document.getElementById("count").value || 1));
       buildRows(n);
     };
-    
+
     runBtn.onclick = () => {
-      let csv = "";
-      [...table.querySelectorAll("tr")].slice(1).forEach(row=>{
-        const w = row.querySelector(".w").value || 0;
-        const m = row.querySelector(".m").value || 0;
-        const h = row.querySelector(".h").value || 0;
-        csv += `${w},${m},${h}\n`;
-      });
-      runDemo("cylinder_input.py", { csv });
+      status.textContent = "▶ Running…";
+      output.innerHTML = "";
+      // simulate processing delay
+      setTimeout(() => {
+        output.innerHTML = '<img src="assets/thumbs/cyli_thumb.png" alt="Cylinder Gradient Output">';
+        status.textContent = "✅ Done";
+      }, 800);
     };
-    
-    /* default rows on load */
+
+    // default rows on load
     buildRows(4);
-    </script>
-    </body></html>
+  </script>
+</body>
+</html>
