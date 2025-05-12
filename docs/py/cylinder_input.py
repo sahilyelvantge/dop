@@ -1,108 +1,107 @@
+# ─── Ensure SciPy is installed in Pyodide ───────────────────────────────────
+import micropip, asyncio
+asyncio.run(micropip.install("scipy"))
+
+# ─── Original cylinder code (unchanged) ────────────────────────────────────
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
+from scipy.ndimage import gaussian_filter
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
-import math
 
-# ─── NumPy Gaussian blur (separable convolution) -------------------
-def gaussian_blur(img, sigma=5):
-    if sigma <= 0:
-        return img
-    radius = int(3 * sigma)
-    x = np.arange(-radius, radius+1)
-    kernel = np.exp(-0.5 * (x/sigma)**2)
-    kernel /= kernel.sum()
-    # blur rows
-    tmp = np.apply_along_axis(lambda row: np.convolve(row, kernel, mode='same'), 1, img)
-    # blur cols
-    blurred = np.apply_along_axis(lambda col: np.convolve(col, kernel, mode='same'), 0, tmp)
-    return blurred
+def create_gradient_distribution(percentages, colors, size=(100, 300), smoothness=5):
+    """
+    Build a 2D intensity_map (H×W) from percentages dict and then color it
+    with a custom colormap defined by colors (3 RGB stops).
+    """
+    H, W = size
+    total = H * W
 
-# ─── Read CSV of 3 values per catalyst (Weak, Medium, High) ----------
-csv = (args.get("csv","") or "").strip()
-if not csv:
-    csv = "100,0,0"
-specs = []
-for line in csv.splitlines():
-    parts = [p.strip() for p in line.split(",")[:3]]
-    if len(parts) != 3:
-        continue
-    try:
-        w,m,h = map(float, parts)
-        specs.append({"Weak": w, "Medium": m, "High": h})
-    except:
-        continue
-if not specs:
-    specs = [{"Weak":100, "Medium":0, "High":0}]
+    # Compute counts for each category
+    n_weak   = int(percentages['Weak']   / 100 * total)
+    n_medium = int(percentages['Medium'] / 100 * total)
+    n_high   = total - (n_weak + n_medium)
 
-# ─── Gradient palettes (cycled) -------------------------------------
-gradient_colors = {
-    0: [(0.95,0.8,1.0), (0.6,0.2,0.9), (0.3,0.0,0.6)],   # purple
-    1: [(0.8,1.0,1.0),  (0.0,0.6,0.9), (0.0,0.2,0.5)],   # cyan
-    2: [(0.8,1.0,0.8),  (0.0,0.8,0.0), (0.0,0.4,0.0)],   # green
-    3: [(1.0,0.8,0.8),  (0.9,0.0,0.0), (0.6,0.0,0.0)],   # red
+    # Flat array: 0=weak, 0.5=medium, 1=high
+    flat = np.zeros(total, dtype=float)
+    flat[n_weak:n_weak + n_medium] = 0.5
+    flat[n_weak + n_medium:]      = 1.0
+    np.random.shuffle(flat)
+
+    # Reshape and smooth
+    intensity_map = flat.reshape(H, W)
+    intensity_map = gaussian_filter(intensity_map, sigma=smoothness)
+    intensity_map = (intensity_map - intensity_map.min()) / (
+        intensity_map.max() - intensity_map.min()
+    )
+
+    # Custom colormap
+    cmap = LinearSegmentedColormap.from_list("grad", colors, N=256)
+    colored_map = cmap(intensity_map)
+
+    return intensity_map, colored_map
+
+# ─── Catalyst data & contrasting gradients ─────────────────────────────────────
+catalysts_data = {
+    "NiO@Ce3O4": {"Weak":98, "Medium":1,   "High":1},
+    "NiO@SiO2":  {"Weak":59.3, "Medium":9.43,"High":31.27},
+    "NiO@ZrO2":  {"Weak":36,   "Medium":12,  "High":52},
+    "NiO@CeO2":  {"Weak":39,   "Medium":42,  "High":19}
 }
 
-# ─── Cylinder mesh constants ----------------------------------------
+gradient_colors = {
+    "NiO@Ce3O4": [(0.95,0.8,1.0), (0.6,0.2,0.9), (0.3,0.0,0.6)],  # purple → deep purple
+    "NiO@SiO2":  [(0.8,1.0,1.0), (0.0,0.6,0.9), (0.0,0.2,0.5)],  # cyan → navy
+    "NiO@ZrO2":  [(0.8,1.0,0.8), (0.0,0.8,0.0), (0.0,0.4,0.0)],  # lime → dark green
+    "NiO@CeO2":  [(1.0,0.8,0.8), (0.9,0.0,0.0), (0.6,0.0,0.0)]   # pink → deep red
+}
+
+# ─── Cylinder mesh (shared) ───────────────────────────────────────────────────
 radius = 1.0
 height = 4.0
 n_u = 300   # angular resolution
 n_v = 100   # vertical resolution
+
 u = np.linspace(0, 2*np.pi, n_u)
 v = np.linspace(-height/2, height/2, n_v)
-U, V = np.meshgrid(u, v)
-bump_scale = 0.0  # no radial perturbation
+U, V = np.meshgrid(u, v)            # shape (n_v, n_u)
+X0 = radius * np.cos(U)
+Y0 = radius * np.sin(U)
+Z0 = V
 
-# ─── Create the gradient distribution (identical logic) ------------
-def create_gradient_distribution(pct, colors, size=(100,300), smooth=5):
-    H,W = size
-    total = H*W
-    n_w = int(pct['Weak']/100 * total)
-    n_m = int(pct['Medium']/100 * total)
-    # fill array
-    flat = np.zeros(total, float)
-    flat[n_w:n_w+n_m] = 0.5
-    flat[n_w+n_m:]     = 1.0
-    np.random.shuffle(flat)
-    field = flat.reshape(H,W)
-    # blur
-    field = gaussian_blur(field, sigma=smooth)
-    mn, mx = field.min(), field.max()
-    if mx>mn:
-        field = (field - mn)/(mx-mn)
-    cmap = LinearSegmentedColormap.from_list("grad", colors, N=256)
-    return field, cmap(field)
+# radial bump scale
+bump_scale = 0.0 # change to 0.5 for protrusions
 
-# ─── Plot dynamic grid (2 cols × rows) -----------------------------
-import math
-n = len(specs)
-cols = 2
-rows = math.ceil(n/cols)
-fig = plt.figure(figsize=(7*cols, 5*rows))
+# ─── Plot all catalysts ───────────────────────────────────────────────────
+fig = plt.figure(figsize=(14, 12))
 
-for idx, pct in enumerate(specs):
-    palette = gradient_colors[idx % 4]
+for idx, cat in enumerate(catalysts_data.keys()):
+    perc = catalysts_data[cat]
+    cols = gradient_colors[cat]
+
+    # get gradient distribution for this catalyst
     intensity_map, colored_map = create_gradient_distribution(
-        pct, palette, size=(n_v,n_u), smooth=8
+        perc, cols, size=(n_v, n_u), smoothness=8
     )
+
+    # perturb radius by intensity
     R = radius + bump_scale * intensity_map
     X = R * np.cos(U)
     Y = R * np.sin(U)
     Z = V
 
-    ax = fig.add_subplot(rows, cols, idx+1, projection='3d')
+    ax = fig.add_subplot(2, 2, idx+1, projection='3d')
     ax.plot_surface(
         X, Y, Z,
         facecolors=colored_map,
         rcount=n_v, ccount=n_u,
         linewidth=0, antialiased=False
     )
-    ax.set_title(
-        f"Catalyst {idx+1}\n"
-        f"Weak: {pct['Weak']:.1f}%, Medium: {pct['Medium']:.1f}%, High: {pct['High']:.1f}%",
-        fontsize=12
-    )
+    ax.set_title(cat, fontsize=14)
     ax.set_axis_off()
     ax.view_init(elev=30, azim=45)
 
 plt.tight_layout()
+plt.suptitle("Wrapped Gradient + Protruding Particles on Cylinders",
+             y=1.02, fontsize=16)
+plt.show()
