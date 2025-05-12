@@ -1,0 +1,71 @@
+<!DOCTYPE html><html><head>
+    <meta charset="utf-8"/>
+    <title>Combined Demo</title>
+    <link rel="stylesheet" href="../css/styles.css"/>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+    <script type="module" src="../js/run_demo.js"></script>
+    </head><body>
+    
+    <div class="card">
+      <h2>Gradient & Ni Dispersion</h2>
+    
+      <label>Number of catalysts 
+        <input id="count" type="number" min="1" max="12" value="4">
+      </label>
+      <button id="makeRows">Create rows</button>
+    
+      <form id="demoForm">
+        <table id="catTable"></table>
+      </form>
+    
+      <button id="runBtn" disabled>Run ▶</button>
+      <p id="status"></p>
+      <div id="output"></div>
+    </div>
+    
+    <script type="module">
+    import { runDemo } from "../js/run_demo.js";
+    const table = document.getElementById("catTable");
+    const runBtn = document.getElementById("runBtn");
+    
+    function buildRows(n){
+      let html = `<tr>
+        <th>#</th><th>Weak %</th><th>Medium %</th><th>High %</th>
+        <th>Fresh %</th><th>Reduced %</th>
+      </tr>`;
+      for(let i=0;i<n;i++){
+        html += `<tr>
+          <td>${i+1}</td>
+          <td><input class="w" type="number" step="0.1" value="100"></td>
+          <td><input class="m" type="number" step="0.1" value="0"></td>
+          <td><input class="h" type="number" step="0.1" value="0"></td>
+          <td><input class="f" type="number" step="0.01" value="0.80"></td>
+          <td><input class="r" type="number" step="0.01" value="0.19"></td>
+        </tr>`;
+      }
+      table.innerHTML = html;
+      runBtn.disabled = false;
+    }
+    
+    document.getElementById("makeRows").onclick = () => {
+      const n = Math.min(12, Math.max(1, +document.getElementById("count").value||1));
+      buildRows(n);
+    };
+    
+    runBtn.onclick = () => {
+      let csv="";
+      [...table.querySelectorAll("tr")].slice(1).forEach(row=>{
+        const w=row.querySelector(".w").value||0;
+        const m=row.querySelector(".m").value||0;
+        const h=row.querySelector(".h").value||0;
+        const f=row.querySelector(".f").value||0;
+        const r=row.querySelector(".r").value||0;
+        csv+=`${w},${m},${h},${f},${r}\n`;
+      });
+      runDemo("combined_input.py",{csv});
+    };
+    
+    /* default rows */
+    buildRows(4);
+    </script>
+    </body></html>
