@@ -62,7 +62,8 @@
       output.innerHTML = "";
       // simulate processing delay
       setTimeout(() => {
-        output.innerHTML = '<img src="assets/thumbs/cyli_thumb.png" alt="Cylinder Gradient Output">';
+        // corrected path: go up one level to assets/
+        output.innerHTML = '<img src="../assets/thumbs/cyli_thumb.png" alt="Cylinder Gradient Output">';
         status.textContent = "✅ Done";
       }, 800);
     };
