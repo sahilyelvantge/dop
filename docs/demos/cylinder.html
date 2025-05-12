@@ -41,9 +41,9 @@
       for (let i = 0; i < n; i++) {
         html += `<tr>
           <td>${i+1}</td>
-          <td><input class="w" type="number" step="0.1" value="100"></td>
-          <td><input class="m" type="number" step="0.1" value="0"></td>
-          <td><input class="h" type="number" step="0.1" value="0"></td>
+          <td><input class="w" type="number" step="0.1" value="98"></td>
+          <td><input class="m" type="number" step="0.1" value="1"></td>
+          <td><input class="h" type="number" step="0.1" value="1"></td>
         </tr>`;
       }
       table.innerHTML = html;
@@ -63,7 +63,7 @@
       // simulate processing delay
       setTimeout(() => {
         // corrected path: go up one level to assets/
-        output.innerHTML = '<img src="../assets/thumbs/cyli_thumb.png" alt="Cylinder Gradient Output">';
+        output.innerHTML = '<img src="../assets/thumbs/cyli_thumb_2.jpeg" alt="Cylinder Gradient Output">';
         status.textContent = "✅ Done";
       }, 800);
     };
